@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui';
 
@@ -5,31 +6,41 @@ import 'package:download_manager/pages/download_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:get/route_manager.dart';
+import 'package:path_provider/path_provider.dart';
 
 class DownloaderCallBack {
+  @pragma('vm:entry-point')
   static void downloadCallback(
       String id, DownloadTaskStatus status, int progress) {
-      final SendPort? send = IsolateNameServer.lookupPortByName('downloader_send_port');
-      if(send == null) {
-        debugPrint("OH NULL >>>>> MMMMM");
-      }
-      send?.send([id, status, progress]);
+    final SendPort? send =
+        IsolateNameServer.lookupPortByName('downloader_send_port');
+    if (send == null) {
+      debugPrint("OH NULL >>>>> MMMMM");
+    }
+    send?.send([id, status, progress]);
   }
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  if (Platform.isIOS) {
+    var dir = await getApplicationSupportDirectory();
+    if (!dir.existsSync()) {
+      debugPrint("NOT WORKING HERE");
+      // await dir.create();
+    }
+  }
   // Plugin must be initialized before using
   await FlutterDownloader.initialize(
-          debug:
-              true, // optional: set to false to disable printing logs to console (default: true)
-          ignoreSsl:
-              true // option: set to false to disable working with http links (default: false)
-          );
+      debug:
+          true, // optional: set to false to disable printing logs to console (default: true)
+      ignoreSsl:
+          true // option: set to false to disable working with http links (default: false)
+      );
 
   FlutterDownloader.registerCallback(DownloaderCallBack.downloadCallback);
-   runApp(const MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {

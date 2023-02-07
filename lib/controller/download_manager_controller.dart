@@ -1,5 +1,7 @@
 
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:get/get_state_manager/get_state_manager.dart';
@@ -32,16 +34,33 @@ class DownloadManagerController extends GetxController {
       progressTasks.value = oldValue;
   }
   void addUrl(String url) async {
-    final baseStorage = await getExternalStorageDirectory();
-    if(baseStorage == null) {
+    
+    var path = "";
+
+    if(Platform.isAndroid) {
+      //flutter downloader only support the getExternalStorageDirectory for Android now.
+      final baseStorage = await getExternalStorageDirectory();
+      if(baseStorage == null) {
+        return;
+      }
+      path = baseStorage.path;  
+    }
+    else if(Platform.isIOS) {
+      //flutter downloader only support the getApplicationDocumentsDirectory for iOS now.
+      final baseStorage = await getApplicationDocumentsDirectory();
+      path = baseStorage.path;  
+    }
+    else {
+      debugPrint("Not supported platform");
       return;
     }
-    var path = baseStorage.path;
+    
     debugPrint(path);
     DateTime now = DateTime.now();
     var newTaskId = await FlutterDownloader.enqueue(
         url: url,
         savedDir: path,
+        allowCellular: true,
         fileName: 'Sample${now.millisecondsSinceEpoch}.mp4');
 
     debugPrint("NEW TAKS ID IS $newTaskId");
